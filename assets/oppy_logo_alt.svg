@@ -1,0 +1,47 @@
+<svg width="1280" height="360" viewBox="0 0 1280 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0D1522"/>
+      <stop offset="1" stop-color="#111D2F"/>
+    </linearGradient>
+    <linearGradient id="mars" x1="80" y1="40" x2="300" y2="250" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFC37A"/>
+      <stop offset="0.6" stop-color="#F17E3B"/>
+      <stop offset="1" stop-color="#BF462A"/>
+    </linearGradient>
+    <linearGradient id="title" x1="390" y1="70" x2="980" y2="290" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C2E7FF"/>
+      <stop offset="1" stop-color="#6FB6EE"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1280" height="360" rx="28" fill="url(#bg)"/>
+
+  <g transform="translate(46 34)">
+    <circle cx="130" cy="146" r="112" fill="url(#mars)"/>
+
+    <!-- rover silhouette -->
+    <rect x="84" y="138" width="92" height="27" rx="8" fill="#F7FAFF"/>
+    <rect x="101" y="124" width="24" height="13" rx="5" fill="#F7FAFF"/>
+    <rect x="143" y="124" width="20" height="13" rx="5" fill="#F7FAFF"/>
+    <rect x="127" y="106" width="6" height="18" rx="3" fill="#F7FAFF"/>
+    <circle cx="130" cy="100" r="6" fill="#F7FAFF"/>
+
+    <circle cx="96" cy="173" r="13" fill="#1A2435"/>
+    <circle cx="130" cy="173" r="13" fill="#1A2435"/>
+    <circle cx="164" cy="173" r="13" fill="#1A2435"/>
+
+    <!-- radar lines -->
+    <path d="M145 90C165 78 190 78 210 90" stroke="#9BE7FF" stroke-width="5.5" stroke-linecap="round"/>
+    <path d="M140 76C168 59 203 59 231 76" stroke="#9BE7FF" stroke-width="4.5" stroke-linecap="round" opacity="0.85"/>
+    <path d="M135 63C171 41 216 41 252 63" stroke="#9BE7FF" stroke-width="3.5" stroke-linecap="round" opacity="0.7"/>
+
+    <!-- tiny stars -->
+    <circle cx="34" cy="58" r="2.8" fill="#D7EEFF"/>
+    <circle cx="218" cy="48" r="2.3" fill="#D7EEFF"/>
+    <circle cx="244" cy="212" r="2.2" fill="#D7EEFF"/>
+  </g>
+
+  <text x="390" y="170" fill="url(#title)" font-size="138" font-weight="800" font-family="'Avenir Next', 'Montserrat', 'Segoe UI', sans-serif" letter-spacing="7">OPPY</text>
+  <text x="394" y="238" fill="#E5F4FF" font-size="34" font-weight="600" font-family="'Avenir Next', 'Montserrat', 'Segoe UI', sans-serif" letter-spacing="2">MISSION CONTROL FOR PROXY LINKS</text>
+</svg>

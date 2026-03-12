@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oppy"
+version = "0.1.0"
+description = "OPPY - Mission Control for Proxy Links"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "Fardin" }
+]
+keywords = ["proxy", "vless", "vmess", "mtproto", "socks", "dns", "textual", "xray"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Topic :: Internet :: Proxy Servers",
+]
+dependencies = [
+  "textual>=8.0.2",
+  "rich>=14.3.3",
+]
+
+[project.optional-dependencies]
+clipboard = ["pyperclip>=1.9.0"]
+
+[project.urls]
+Homepage = "https://github.com/f4rih/oppy"
+Repository = "https://github.com/f4rih/oppy"
+Issues = "https://github.com/f4rih/oppy/issues"
+
+[project.scripts]
+oppy = "oppy:main"
+
+[tool.setuptools]
+py-modules = ["oppy"]
+packages = ["helpers", "models", "widgets"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+widgets = ["oppy.tcss"]

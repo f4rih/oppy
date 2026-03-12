@@ -1,0 +1,38 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.venv/
+venv/
+env/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# IDE / editor
+.idea/
+.vscode/
+
+# Runtime outputs
+*.log
+healthy_links.txt
+output.txt
+bot_output/
+*.session
+*.session-journal
+
+# Local tools
+.coverage
+coverage.xml
+.cache/

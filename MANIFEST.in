@@ -1,0 +1,6 @@
+include README.md
+include TUTORIAL.md
+include oppy.tcss
+include Formula/oppy.rb
+recursive-include assets *
+recursive-include widgets *.tcss

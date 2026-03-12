@@ -1,0 +1,587 @@
+Screen {
+    background: #0b0f14;
+    color: #d6e2f0;
+}
+
+Header, Footer {
+    background: #0f1621;
+    color: #9ecbff;
+}
+
+#app {
+    padding: 0 1;
+}
+
+#summary {
+    height: 7;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-bottom: 1;
+}
+
+#summary_info_box {
+    width: 1fr;
+    background: #111923;
+    border: tall #32d17d;
+    padding: 0 1;
+}
+
+#summary_config_box {
+    width: 1fr;
+    background: #111923;
+    border: tall #66b6ff;
+    padding: 0 1;
+    margin-left: 1;
+}
+
+#summary_meter_box {
+    width: 1fr;
+    background: #111923;
+    border: tall #32d17d;
+    padding: 0 1;
+    margin-left: 1;
+}
+
+#stats {
+    width: 100%;
+}
+
+#runtime_config {
+    width: 100%;
+    color: #9ecbff;
+}
+
+#status_meters {
+    width: 100%;
+    height: 4;
+    content-align: left middle;
+    padding-left: 1;
+    color: #c9d7e6;
+}
+
+#trend_row {
+    height: 3;
+    background: #0f141c;
+    border: tall #66b6ff;
+    align: left middle;
+    padding: 0 1;
+    margin-bottom: 1;
+}
+
+#latency_trend_title {
+    width: 15;
+    color: #66b6ff;
+    text-style: bold;
+}
+
+#latency_spark {
+    width: 1fr;
+    margin-left: 1;
+    margin-right: 1;
+    content-align: left middle;
+    overflow: hidden;
+}
+
+#latency_stats {
+    width: 42;
+    min-width: 34;
+    color: #9ecbff;
+    content-align: left middle;
+}
+
+#actions_row {
+    height: 4;
+    background: #0f141c;
+    border: tall #ff6b6b;
+    align: left middle;
+    padding: 0 1;
+    margin-top: 0;
+}
+
+#actions_left {
+    width: auto;
+    height: 2;
+    align: left middle;
+}
+
+#actions_center {
+    width: 1fr;
+    height: 2;
+    align: center middle;
+}
+
+.action-loader {
+    width: 10;
+    min-width: 10;
+    height: 1;
+    content-align: left middle;
+}
+
+.loader-running {
+    color: #32d17d;
+}
+
+.loader-paused {
+    color: #f5a524;
+}
+
+.loader-stopping {
+    color: #ff6b6b;
+}
+
+#actions_right {
+    width: auto;
+    height: 2;
+    align: right middle;
+}
+
+.action-btn {
+    min-width: 14;
+    height: 1;
+    padding: 0 1;
+    margin-right: 1;
+    text-align: center;
+    content-align: center middle;
+    text-style: bold;
+    color: #ffffff;
+    background: transparent;
+    border: none !important;
+    outline: none !important;
+}
+
+#actions_right .action-btn {
+    margin-right: 0;
+}
+
+.action-btn.-primary {
+    background: #1168c7;
+}
+
+.action-btn.-primary:hover {
+    background: #0f5cb0;
+}
+
+.action-btn.-success {
+    background: #168248;
+}
+
+.action-btn.-success:hover {
+    background: #13753f;
+}
+
+.action-btn.-warning {
+    background: #b57710;
+    color: #ffffff;
+}
+
+.action-btn.-warning:hover {
+    background: #9e690e;
+}
+
+.action-btn.-default {
+    background: #4a5a70;
+}
+
+.action-btn.-default:hover {
+    background: #415066;
+}
+
+#table {
+    height: 1fr;
+    min-height: 4;
+    margin-bottom: 1;
+    border: tall #ffffff;
+}
+
+DataTable {
+    background: #0c1117;
+}
+
+DataTable > .datatable--header {
+    color: #66b6ff;
+    background: #1d3148;
+    text-style: bold;
+}
+
+DataTable > .datatable--header-hover {
+    color: #ffffff;
+    background: #29476b;
+}
+
+DataTable > .datatable--header-cursor {
+    color: #ffffff;
+    background: #3a6293;
+}
+
+DataTable > .datatable--cursor {
+    color: #ffffff;
+    background: #1f5f9f;
+}
+
+ToastRack {
+    dock: bottom;
+    align: right bottom;
+    margin-bottom: 5;
+    margin-right: 1;
+}
+
+RowDetailsModal {
+    align: center middle;
+}
+
+#details_modal {
+    width: 80%;
+    height: 80%;
+    background: #0f1621;
+    border: tall #66b6ff;
+    padding: 1 2;
+}
+
+#details_title {
+    height: 1;
+    text-style: bold;
+    color: #66b6ff;
+    margin-bottom: 1;
+}
+
+#details_scroll {
+    height: 1fr;
+    border: round #2a3f58;
+    background: #0b1118;
+    padding: 1;
+    margin-bottom: 1;
+    overflow-y: auto;
+}
+
+#details_body {
+    width: 100%;
+}
+
+#details_actions {
+    height: 3;
+    align: right middle;
+}
+
+#details_actions Button {
+    margin-left: 1;
+}
+
+SettingsModal {
+    align: center middle;
+}
+
+#settings_modal {
+    width: 78;
+    height: 23;
+    min-height: 0;
+    max-height: 95%;
+    background: #101722;
+    border: tall #66b6ff;
+    padding: 1 2;
+    overflow-y: hidden;
+}
+
+#settings_title {
+    text-style: bold;
+    color: #66b6ff;
+    margin-bottom: 1;
+}
+
+.settings_label {
+    color: #9ecbff;
+    margin-top: 0;
+}
+
+#settings_row_top {
+    height: auto;
+    margin-top: 0;
+    width: 100%;
+}
+
+.settings_group {
+    width: 1fr;
+    height: auto;
+    margin-right: 1;
+}
+
+#settings_row_bottom {
+    height: auto;
+    margin-top: 1;
+    width: 100%;
+}
+
+#settings_row_dns {
+    height: auto;
+    margin-top: 1;
+    width: 100%;
+}
+
+#settings_row_bottom Input {
+    width: 100%;
+}
+
+.settings_group Input {
+    width: 100%;
+}
+
+#settings_row_dns .settings_group:last-child {
+    margin-right: 0;
+}
+
+#settings_row_top .settings_group:last-child {
+    margin-right: 0;
+}
+
+#settings_row_top .settings_group Static {
+    margin-bottom: 0;
+}
+
+#settings_row_bottom Static {
+    margin-bottom: 0;
+}
+
+#settings_row_dns .settings_group Static {
+    margin-bottom: 0;
+}
+
+#settings_row_bottom Input,
+.settings_group Input {
+    margin-top: 0;
+}
+
+#settings_row_top,
+#settings_row_bottom,
+#settings_row_dns {
+    margin-bottom: 0;
+}
+
+#settings_actions {
+    height: 3;
+    margin-top: 1;
+    align: right middle;
+}
+
+#settings_actions Button {
+    margin-left: 1;
+}
+
+ExportModal {
+    align: center middle;
+}
+
+#export_modal {
+    width: 96;
+    height: 80%;
+    max-height: 95%;
+    background: #101722;
+    border: tall #66b6ff;
+    padding: 1 2;
+}
+
+#export_title {
+    text-style: bold;
+    color: #66b6ff;
+}
+
+.export_label {
+    color: #9ecbff;
+    margin-top: 1;
+}
+
+#export_tree {
+    height: 1fr;
+    min-height: 8;
+    border: round #2a3f58;
+    background: #0b1118;
+    margin-top: 1;
+}
+
+#export_selected_dir {
+    color: #c9d7e6;
+    margin-top: 1;
+}
+
+#export_filename {
+    margin-top: 1;
+}
+
+#export_include_partial {
+    margin-top: 1;
+    color: #9ecbff;
+}
+
+#export_error {
+    color: #ff6b6b;
+    height: 1;
+    margin-top: 1;
+}
+
+#export_actions {
+    height: 3;
+    margin-top: 1;
+    align: right middle;
+}
+
+#export_actions Button {
+    margin-left: 1;
+}
+
+LogsModal {
+    align: center middle;
+}
+
+#logs_modal {
+    width: 88%;
+    height: 82%;
+    background: #101722;
+    border: tall #66b6ff;
+    padding: 1 2;
+}
+
+#logs_title {
+    text-style: bold;
+    color: #66b6ff;
+    margin-bottom: 1;
+}
+
+#logs_view {
+    height: 1fr;
+    border: round #2a3f58;
+    background: #0b1118;
+    padding: 1;
+}
+
+#logs_actions {
+    height: 3;
+    margin-top: 1;
+    align: right middle;
+}
+
+TerminalModal {
+    align: center middle;
+}
+
+#terminal_modal {
+    width: 90%;
+    height: 82%;
+    background: #101722;
+    border: tall #66b6ff;
+    padding: 1 2;
+}
+
+#terminal_title {
+    text-style: bold;
+    color: #66b6ff;
+}
+
+#terminal_cwd {
+    margin-top: 1;
+    color: #9ecbff;
+}
+
+#terminal_log {
+    height: 1fr;
+    margin-top: 1;
+    border: round #2a3f58;
+    background: #0b1118;
+    padding: 1;
+}
+
+#terminal_input {
+    margin-top: 1;
+}
+
+#terminal_actions {
+    height: 3;
+    margin-top: 1;
+    align: right middle;
+}
+
+#terminal_actions Button {
+    margin-left: 1;
+}
+
+ImportLinksModal {
+    align: center middle;
+}
+
+#import_modal {
+    width: 92%;
+    height: 84%;
+    background: #101722;
+    border: tall #66b6ff;
+    padding: 1 2;
+}
+
+#import_title {
+    text-style: bold;
+    color: #66b6ff;
+}
+
+#import_hint {
+    margin-top: 1;
+    color: #9ecbff;
+}
+
+#import_tabs {
+    height: 1fr;
+    margin-top: 1;
+}
+
+#import_tab_paste,
+#import_tab_file {
+    padding: 0;
+}
+
+#import_editor {
+    height: 1fr;
+    margin-top: 0;
+    border: round #2a3f58;
+    background: #0b1118;
+}
+
+#import_file_hint,
+#import_file_hint {
+    color: #9ecbff;
+    margin-top: 0;
+}
+
+#import_paste_actions {
+    height: 3;
+    margin-top: 1;
+    align: right middle;
+}
+
+#import_paste_actions Button {
+    margin-left: 1;
+}
+
+#import_tree {
+    height: 1fr;
+    min-height: 8;
+    border: round #2a3f58;
+    background: #0b1118;
+    margin-top: 1;
+}
+
+#import_selected_file {
+    margin-top: 1;
+    color: #c9d7e6;
+}
+
+#import_error {
+    margin-top: 1;
+    height: 1;
+    color: #ff6b6b;
+}
+
+#import_actions {
+    height: 3;
+    margin-top: 1;
+    align: right middle;
+}
+
+#import_actions Button {
+    margin-left: 1;
+}
