@@ -84,42 +84,30 @@ python oppy.py --input-file output.txt
 
 ### pip
 
-From local source:
+From PyPI:
 
 ```bash
-pip install .
-```
-
-Editable for development:
-
-```bash
-pip install -e .
+pip install oppy-mc
 ```
 
 With optional clipboard support:
 
 ```bash
-pip install ".[clipboard]"
+pip install "oppy-mc[clipboard]"
 ```
 
 ### uv
 
-From local source:
+From PyPI:
 
 ```bash
-uv pip install .
-```
-
-Editable:
-
-```bash
-uv pip install -e .
+uv pip install oppy-mc
 ```
 
 Tool-style install:
 
 ```bash
-uv tool install .
+uv tool install oppy-mc
 ```
 
 ---
@@ -164,4 +152,4 @@ For a cleaner UI, prefer a modern third-party terminal such as Ghostty, iTerm2, 
 
 ## Tutorial
 
-See `TUTORIAL.md` for a step-by-step workflow.
+See [TUTORIAL.md](TUTORIAL.md) for a step-by-step workflow.

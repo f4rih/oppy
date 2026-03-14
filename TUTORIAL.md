@@ -19,7 +19,11 @@ This one-liner installs both Xray and OPPY.
 
 #### macOS
 
-Download the latest Xray release, extract `xray`, add it to your `PATH`, then verify:
+```bash
+brew install xray
+```
+
+Then verify:
 
 ```bash
 xray version
@@ -45,10 +49,10 @@ If `xray-core` is unavailable in your repositories, use the official installer s
 xray version
 ```
 
-Install OPPY from source:
+Install OPPY from PyPI:
 
 ```bash
-pip install .
+pip install oppy-mc
 ```
 
 ## 2) Start OPPY
