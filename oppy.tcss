@@ -91,7 +91,7 @@ Header, Footer {
 }
 
 #actions_row {
-    height: 4;
+    height: 5;
     background: #0f141c;
     border: tall #ff6b6b;
     align: left middle;
@@ -101,13 +101,13 @@ Header, Footer {
 
 #actions_left {
     width: auto;
-    height: 2;
+    height: 3;
     align: left middle;
 }
 
 #actions_center {
     width: 1fr;
-    height: 2;
+    height: 3;
     align: center middle;
 }
 
@@ -132,8 +132,25 @@ Header, Footer {
 
 #actions_right {
     width: auto;
-    height: 2;
+    height: 3;
     align: right middle;
+}
+
+#actions_row Button {
+    min-width: 14;
+    height: 3;
+}
+
+#actions_left Button {
+    margin-right: 1;
+}
+
+#actions_left Button:last-child {
+    margin-right: 0;
+}
+
+#actions_right Button {
+    margin-left: 1;
 }
 
 .action-btn {
@@ -273,19 +290,25 @@ SettingsModal {
 
 #settings_modal {
     width: 78;
-    height: 23;
+    height: auto;
     min-height: 0;
     max-height: 95%;
     background: #101722;
     border: tall #66b6ff;
     padding: 1 2;
-    overflow-y: hidden;
+    overflow-y: auto;
 }
 
 #settings_title {
     text-style: bold;
     color: #66b6ff;
     margin-bottom: 1;
+}
+
+#settings_body {
+    height: auto;
+    overflow-y: auto;
+    padding-right: 0;
 }
 
 .settings_label {
@@ -358,7 +381,7 @@ SettingsModal {
 
 #settings_actions {
     height: 3;
-    margin-top: 1;
+    margin-top: 0;
     align: right middle;
 }
 
@@ -372,11 +395,13 @@ ExportModal {
 
 #export_modal {
     width: 96;
-    height: 80%;
+    height: 84%;
+    min-height: 14;
     max-height: 95%;
     background: #101722;
     border: tall #66b6ff;
     padding: 1 2;
+    overflow: hidden;
 }
 
 #export_title {
@@ -387,6 +412,12 @@ ExportModal {
 .export_label {
     color: #9ecbff;
     margin-top: 1;
+}
+
+#export_body {
+    height: 1fr;
+    overflow-y: auto;
+    padding-right: 1;
 }
 
 #export_tree {
@@ -411,6 +442,22 @@ ExportModal {
     color: #9ecbff;
 }
 
+#export_type_checks {
+    margin-top: 1;
+    height: 3;
+    align: left middle;
+}
+
+.export_type_checkbox {
+    margin-top: 0;
+    margin-right: 2;
+    color: #c9d7e6;
+}
+
+.export_type_hint {
+    color: #677489;
+}
+
 #export_error {
     color: #ff6b6b;
     height: 1;
@@ -424,6 +471,77 @@ ExportModal {
 }
 
 #export_actions Button {
+    margin-left: 1;
+}
+
+FilterModal {
+    align: center middle;
+}
+
+#filter_modal {
+    width: 86;
+    height: auto;
+    min-height: 0;
+    max-height: 95%;
+    background: #101722;
+    border: tall #66b6ff;
+    padding: 1 2;
+    overflow: hidden;
+}
+
+#filter_title {
+    text-style: bold;
+    color: #66b6ff;
+}
+
+#filter_body {
+    height: auto;
+    overflow-y: auto;
+    padding-right: 0;
+}
+
+.filter_group {
+    width: 1fr;
+    height: auto;
+    margin-right: 1;
+}
+
+#filter_row_top,
+#filter_row_bottom {
+    width: 100%;
+    height: auto;
+    margin-top: 1;
+}
+
+#filter_row_top .filter_group:last-child,
+#filter_row_bottom .filter_group:last-child {
+    margin-right: 0;
+}
+
+.filter_label {
+    color: #9ecbff;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+#filter_name,
+#filter_server,
+#filter_type {
+    margin-top: 0;
+}
+
+#filter_tip {
+    margin-top: 1;
+    color: #677489;
+}
+
+#filter_actions {
+    height: 3;
+    margin-top: 0;
+    align: right middle;
+}
+
+#filter_actions Button {
     margin-left: 1;
 }
 
@@ -509,9 +627,12 @@ ImportLinksModal {
 #import_modal {
     width: 92%;
     height: 84%;
+    min-height: 14;
+    max-height: 95%;
     background: #101722;
     border: tall #66b6ff;
     padding: 1 2;
+    overflow: hidden;
 }
 
 #import_title {
@@ -522,6 +643,12 @@ ImportLinksModal {
 #import_hint {
     margin-top: 1;
     color: #9ecbff;
+}
+
+#import_body {
+    height: 1fr;
+    overflow-y: auto;
+    padding-right: 1;
 }
 
 #import_tabs {

@@ -32,7 +32,14 @@ from helpers.constants import (
 from helpers.proxy_links import parse_link
 from helpers.xray import detect_xray
 from models.vless_item import VlessItem
-from widgets.modals import ExportModal, ImportLinksModal, LogsModal, RowDetailsModal, SettingsModal
+from widgets.modals import (
+    ExportModal,
+    FilterModal,
+    ImportLinksModal,
+    LogsModal,
+    RowDetailsModal,
+    SettingsModal,
+)
 
 class VlessTesterApp(App[None]):
     _CSS_FILE = Path(__file__).resolve().with_name("oppy.tcss")
@@ -42,7 +49,7 @@ class VlessTesterApp(App[None]):
     BINDINGS = [
         ("q", "quit", "Quit"),
         ("s", "toggle_scan", "Start/Stop checks"),
-        ("f", "reset_results", "Fresh start"),
+        ("f", "open_filter", "Filter"),
         ("r", "reset_scan", "Reset scan"),
         ("e", "export_healthy", "Export"),
         ("i", "open_import_links", "Import links"),
@@ -88,6 +95,106 @@ class VlessTesterApp(App[None]):
         self._paused = False
         self._loader_mode = "idle"
         self._worker = None
+        self.active_filters: dict[str, str] = {"type": "", "name": "", "server": ""}
+        self.visible_item_indices: list[int] = list(range(len(self.items)))
+
+    @staticmethod
+    def _item_type(item: VlessItem) -> str:
+        return str(item.parsed.get("protocol") or "vless").strip().lower()
+
+    @staticmethod
+    def _normalize_filters(filters: dict | None) -> dict[str, str]:
+        raw = filters or {}
+        return {
+            "type": str(raw.get("type", "")).strip().lower(),
+            "name": str(raw.get("name", "")).strip().lower(),
+            "server": str(raw.get("server", "")).strip().lower(),
+        }
+
+    def _item_matches_filters(self, item: VlessItem, filters: dict | None = None) -> bool:
+        normalized = self._normalize_filters(filters or self.active_filters)
+        type_filter = normalized["type"]
+        name_filter = normalized["name"]
+        server_filter = normalized["server"]
+
+        item_type = self._item_type(item)
+        item_name = str(item.parsed.get("name") or "").strip().lower()
+        item_server = str(item.parsed.get("server") or "").strip().lower()
+
+        if type_filter and item_type != type_filter:
+            return False
+        if name_filter and name_filter not in item_name:
+            return False
+        if server_filter and server_filter not in item_server:
+            return False
+        return True
+
+    def _recalculate_counters_from_items(self) -> None:
+        self.healthy_count = sum(1 for item in self.items if item.status == "OK")
+        self.partial_count = sum(1 for item in self.items if item.status == "PARTIAL")
+        self.failed_count = sum(1 for item in self.items if item.status == "FAILED")
+        self.checked_count = self.healthy_count + self.partial_count + self.failed_count
+
+        self.latency_valid_history = [
+            float(item.latency_ms)
+            for item in self.items
+            if item.latency_ms is not None
+        ]
+        self.latency_history = list(self.latency_valid_history)
+
+    def _selected_item_index(self) -> Optional[int]:
+        table = self.query_one(DataTable)
+        row = table.cursor_row
+        if row < 0 or row >= len(self.visible_item_indices):
+            return None
+        return self.visible_item_indices[row]
+
+    def _add_table_row(self, table: DataTable, item: VlessItem) -> None:
+        v = item.parsed
+        table.add_row(
+            v.get("name") or "-",
+            self._item_type(item),
+            v.get("server") or "-",
+            str(v.get("port") or "-"),
+            v.get("type") or "-",
+            v.get("security") or "-",
+            v.get("sni") or "-",
+            v.get("flow") or "-",
+            self._status_text(item.status),
+            self._latency_text(item.latency_ms),
+            item.exit_ip or "-",
+            self._reason_text(item.reason),
+            key=str(item.index),
+        )
+
+    def _refresh_table(self) -> None:
+        table = self.query_one(DataTable)
+        selected_item_index = self._selected_item_index()
+        table.clear(columns=False)
+        self.visible_item_indices = []
+
+        for item in self.items:
+            if not self._item_matches_filters(item):
+                continue
+            self._add_table_row(table, item)
+            self.visible_item_indices.append(item.index)
+
+        if not self.visible_item_indices:
+            return
+
+        target_item_index = selected_item_index
+        if target_item_index is None and self.active_row_index is not None:
+            target_item_index = self.active_row_index
+
+        if target_item_index in self.visible_item_indices:
+            row_index = self.visible_item_indices.index(target_item_index)
+        else:
+            row_index = 0
+
+        try:
+            table.move_cursor(row=row_index, column=0, animate=False, scroll=False)
+        except Exception:
+            pass
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -110,7 +217,6 @@ class VlessTesterApp(App[None]):
                         "Start checks",
                         id="scan",
                         variant="primary",
-                        classes="action-btn",
                         flat=True,
                         compact=True,
                     )
@@ -118,7 +224,6 @@ class VlessTesterApp(App[None]):
                         "Pause",
                         id="pause",
                         variant="primary",
-                        classes="action-btn",
                         flat=True,
                         compact=True,
                     )
@@ -129,7 +234,6 @@ class VlessTesterApp(App[None]):
                         "Export",
                         id="export",
                         variant="success",
-                        classes="action-btn",
                         flat=True,
                         compact=True,
                     )
@@ -153,23 +257,7 @@ class VlessTesterApp(App[None]):
         table.add_column("Exit IP", key="exit_ip", width=16)
         table.add_column("Reason", key="reason", width=44)
 
-        for item in self.items:
-            v = item.parsed
-            table.add_row(
-                v.get("name") or "-",
-                v.get("protocol") or "vless",
-                v.get("server") or "-",
-                str(v.get("port") or "-"),
-                v.get("type") or "-",
-                v.get("security") or "-",
-                v.get("sni") or "-",
-                v.get("flow") or "-",
-                self._status_text(item.status),
-                self._latency_text(None),
-                "-",
-                "-",
-                key=str(item.index),
-            )
+        self._refresh_table()
 
         self._update_stats()
         self._update_runtime_config()
@@ -185,7 +273,9 @@ class VlessTesterApp(App[None]):
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         row_index = getattr(event, "cursor_row", -1)
-        self._show_details_by_index(row_index)
+        if row_index < 0 or row_index >= len(self.visible_item_indices):
+            return
+        self._show_details_by_index(self.visible_item_indices[row_index])
 
     def on_key(self, event: events.Key) -> None:
         if not self._is_worker_running() or not self.auto_follow_rows:
@@ -280,7 +370,6 @@ class VlessTesterApp(App[None]):
         added = 0
         duplicates = 0
         unsupported = 0
-        table = self.query_one(DataTable)
 
         for link in lines:
             if not link:
@@ -301,23 +390,7 @@ class VlessTesterApp(App[None]):
             existing_keys.add(key)
             added += 1
 
-            v = item.parsed
-            table.add_row(
-                v.get("name") or "-",
-                v.get("protocol") or "vless",
-                v.get("server") or "-",
-                str(v.get("port") or "-"),
-                v.get("type") or "-",
-                v.get("security") or "-",
-                v.get("sni") or "-",
-                v.get("flow") or "-",
-                self._status_text(item.status),
-                self._latency_text(None),
-                "-",
-                "-",
-                key=str(item.index),
-            )
-
+        self._refresh_table()
         self._update_stats()
         self._update_status_bars()
 
@@ -414,7 +487,72 @@ class VlessTesterApp(App[None]):
         table = self.query_one(DataTable)
         if self.focused is not table:
             return
-        self._show_details_by_index(table.cursor_row)
+        row_index = table.cursor_row
+        if row_index < 0 or row_index >= len(self.visible_item_indices):
+            return
+        self._show_details_by_index(self.visible_item_indices[row_index])
+
+    def action_open_filter(self) -> None:
+        available_types = sorted({self._item_type(item) for item in self.items})
+        self.push_screen(
+            FilterModal(available_types, self.active_filters),
+            self._apply_filter_result,
+        )
+
+    def _apply_filter_result(self, result: dict | None) -> None:
+        if result is None:
+            return
+        if result.get("reset"):
+            self.active_filters = {"type": "", "name": "", "server": ""}
+            self._refresh_table()
+            self.notify("Filters reset.", severity="information")
+            return
+
+        candidate_filters = self._normalize_filters(result)
+
+        if result.get("drop"):
+            if self._is_worker_running():
+                self.notify("Stop checks before dropping records.", severity="warning")
+                return
+            if not any(candidate_filters.values()):
+                self.notify(
+                    "Set at least one filter before dropping records.",
+                    severity="warning",
+                )
+                return
+
+            kept_items: list[VlessItem] = []
+            dropped = 0
+            for item in self.items:
+                if self._item_matches_filters(item, candidate_filters):
+                    dropped += 1
+                else:
+                    kept_items.append(item)
+
+            if dropped == 0:
+                self.notify("No records matched the drop filters.", severity="warning")
+                return
+
+            for new_index, item in enumerate(kept_items):
+                item.index = new_index
+            self.items = kept_items
+            self.active_filters = {"type": "", "name": "", "server": ""}
+            self.active_row_index = None
+            self._recalculate_counters_from_items()
+            self._refresh_table()
+            self._update_stats()
+            self._update_status_bars()
+            self._update_latency_trend()
+            self.notify(f"Dropped {dropped} records.", severity="information")
+            self._append_log(f"Dropped {dropped} records via filter.", style="yellow")
+            return
+
+        self.active_filters = candidate_filters
+        self._refresh_table()
+        self.notify(
+            f"Filter applied: {len(self.visible_item_indices)}/{len(self.items)} visible.",
+            severity="information",
+        )
 
     def _show_details_by_index(self, row_index: int) -> None:
         if row_index < 0 or row_index >= len(self.items):
@@ -479,6 +617,7 @@ class VlessTesterApp(App[None]):
         scan_btn = self.query_one("#scan", Button)
         scan_btn.label = "Stop checks"
         scan_btn.variant = "warning"
+        scan_btn.disabled = False
         pause_btn = self.query_one("#pause", Button)
         pause_btn.disabled = False
         pause_btn.label = "Pause"
@@ -525,6 +664,7 @@ class VlessTesterApp(App[None]):
             scan_btn = self.query_one("#scan", Button)
             scan_btn.label = "Start checks"
             scan_btn.variant = "primary"
+            scan_btn.disabled = True
             self._set_action_loader("stopping")
             self._append_log("Stop requested", style="yellow")
 
@@ -541,8 +681,9 @@ class VlessTesterApp(App[None]):
 
     def action_export_healthy(self) -> None:
         default_filename = Path(self.export_file).name
+        available_types = sorted({self._item_type(item) for item in self.items})
         self.push_screen(
-            ExportModal(self.start_directory, default_filename),
+            ExportModal(self.start_directory, default_filename, available_types),
             self._apply_export_result,
         )
 
@@ -551,24 +692,39 @@ class VlessTesterApp(App[None]):
             return
         output_path = Path(result["directory"]) / result["filename"]
         include_partial = bool(result.get("include_partial", False))
+        selected_types = {
+            str(link_type).strip().lower() for link_type in result.get("selected_types", [])
+        }
         partial_exportable = [
             item
             for item in self.items
             if item.status == "PARTIAL"
             and item.latency_ms is not None
             and item.latency_ms < 1000
+            and (not selected_types or self._item_type(item) in selected_types)
         ]
         if include_partial:
-            healthy_urls = [item.url for item in self.items if item.status == "OK"] + [
+            healthy_urls = [
+                item.url
+                for item in self.items
+                if item.status == "OK"
+                and (not selected_types or self._item_type(item) in selected_types)
+            ] + [
                 item.url for item in partial_exportable
             ]
         else:
-            healthy_urls = [item.url for item in self.items if item.status == "OK"]
+            healthy_urls = [
+                item.url
+                for item in self.items
+                if item.status == "OK"
+                and (not selected_types or self._item_type(item) in selected_types)
+            ]
+        separator = "\n------------------------------\n"
+        payload = separator.join(healthy_urls)
+        if payload:
+            payload += "\n"
         try:
-            output_path.write_text(
-                "\n".join(healthy_urls) + ("\n" if healthy_urls else ""),
-                encoding="utf-8",
-            )
+            output_path.write_text(payload, encoding="utf-8")
         except Exception as exc:
             self.notify(f"Export failed: {exc}", severity="error")
             self._append_log(f"Export failed: {exc}", style="red")
@@ -608,13 +764,11 @@ class VlessTesterApp(App[None]):
             return
 
         table = self.query_one(DataTable)
-        for item in self.items:
-            try:
-                table.remove_row(str(item.index))
-            except Exception:
-                pass
+        table.clear(columns=False)
 
         self.items = []
+        self.visible_item_indices = []
+        self.active_filters = {"type": "", "name": "", "server": ""}
         self.checked_count = 0
         self.healthy_count = 0
         self.partial_count = 0
@@ -628,6 +782,7 @@ class VlessTesterApp(App[None]):
         scan_btn = self.query_one("#scan", Button)
         scan_btn.label = "Start checks"
         scan_btn.variant = "primary"
+        scan_btn.disabled = False
         pause_btn = self.query_one("#pause", Button)
         pause_btn.disabled = True
         pause_btn.label = "Pause"
@@ -751,8 +906,11 @@ class VlessTesterApp(App[None]):
 
     def _set_row_checking(self, index: int) -> None:
         table = self.query_one(DataTable)
-        table.update_cell(str(index), "status", self._status_text("CHECKING"))
-        table.update_cell(str(index), "reason", Text("working...", style="dim"))
+        try:
+            table.update_cell(str(index), "status", self._status_text("CHECKING"))
+            table.update_cell(str(index), "reason", Text("working...", style="dim"))
+        except Exception:
+            pass
         self.active_row_index = index
         item = self.items[index]
         p = item.parsed
@@ -773,12 +931,6 @@ class VlessTesterApp(App[None]):
         exit_ip = details.get("exit_ip", "")
         is_partial = details.get("partial", False)
 
-        item.latency_ms = latency
-        item.exit_ip = exit_ip
-        item.reason = reason
-        item.partial = is_partial
-        item.xray_error = details.get("xray_error", "")
-
         if ok:
             item.status = "OK"
             self.healthy_count += 1
@@ -788,14 +940,24 @@ class VlessTesterApp(App[None]):
         else:
             item.status = "FAILED"
             self.failed_count += 1
+            latency = None
+
+        item.latency_ms = latency
+        item.exit_ip = exit_ip
+        item.reason = reason
+        item.partial = is_partial
+        item.xray_error = details.get("xray_error", "")
 
         self.checked_count += 1
 
         table = self.query_one(DataTable)
-        table.update_cell(str(index), "status", self._status_text(item.status))
-        table.update_cell(str(index), "latency", self._latency_text(latency))
-        table.update_cell(str(index), "exit_ip", exit_ip or "-")
-        table.update_cell(str(index), "reason", self._reason_text(reason))
+        try:
+            table.update_cell(str(index), "status", self._status_text(item.status))
+            table.update_cell(str(index), "latency", self._latency_text(latency))
+            table.update_cell(str(index), "exit_ip", exit_ip or "-")
+            table.update_cell(str(index), "reason", self._reason_text(reason))
+        except Exception:
+            pass
 
         if latency is not None:
             plotted = float(latency)
@@ -821,6 +983,7 @@ class VlessTesterApp(App[None]):
         scan_btn = self.query_one("#scan", Button)
         scan_btn.label = "Start checks"
         scan_btn.variant = "primary"
+        scan_btn.disabled = False
         pause_btn = self.query_one("#pause", Button)
         pause_btn.disabled = True
         pause_btn.label = "Pause"
@@ -921,24 +1084,25 @@ class VlessTesterApp(App[None]):
         stats.update(stat_text)
 
     def _update_status_bars(self) -> None:
-        total = len(self.items) or 1
+        total_items = len(self.items)
+        total_for_ratio = total_items if total_items > 0 else 1
         ok = self.healthy_count
         partial = self.partial_count
         failed = self.failed_count
-        pending = max(total - (ok + partial + failed), 0)
+        pending = max(total_items - (ok + partial + failed), 0)
 
         meter = self.query_one("#status_meters", Static)
         # Keep bars compact so they stay visible in narrower terminals.
         bar_width = max(min((meter.size.width or 56) - 18, 38), 20)
 
         text = Text.assemble(
-            self._make_meter_line("OK", ok, total, "#32d17d", bar_width),
+            self._make_meter_line("OK", ok, total_for_ratio, "#32d17d", bar_width),
             "\n",
-            self._make_meter_line("PARTIAL", partial, total, "#f5a524", bar_width),
+            self._make_meter_line("PARTIAL", partial, total_for_ratio, "#f5a524", bar_width),
             "\n",
-            self._make_meter_line("FAILED", failed, total, "#ff6b6b", bar_width),
+            self._make_meter_line("FAILED", failed, total_for_ratio, "#ff6b6b", bar_width),
             "\n",
-            self._make_meter_line("PENDING", pending, total, "#677489", bar_width),
+            self._make_meter_line("PENDING", pending, total_for_ratio, "#677489", bar_width),
         )
         meter.update(text)
 
@@ -961,10 +1125,13 @@ class VlessTesterApp(App[None]):
 
         table = self.query_one(DataTable)
         for item in self.items:
-            table.update_cell(str(item.index), "status", self._status_text("PENDING"))
-            table.update_cell(str(item.index), "latency", self._latency_text(None))
-            table.update_cell(str(item.index), "exit_ip", "-")
-            table.update_cell(str(item.index), "reason", "-")
+            try:
+                table.update_cell(str(item.index), "status", self._status_text("PENDING"))
+                table.update_cell(str(item.index), "latency", self._latency_text(None))
+                table.update_cell(str(item.index), "exit_ip", "-")
+                table.update_cell(str(item.index), "reason", "-")
+            except Exception:
+                pass
 
         self._update_stats()
         self._update_status_bars()
@@ -1042,9 +1209,12 @@ class VlessTesterApp(App[None]):
     def _follow_row(self, index: int) -> None:
         if not self.auto_follow_rows:
             return
+        if index not in self.visible_item_indices:
+            return
         table = self.query_one(DataTable)
         try:
-            table.move_cursor(row=index, animate=False, scroll=True)
+            visible_row = self.visible_item_indices.index(index)
+            table.move_cursor(row=visible_row, animate=False, scroll=True)
         except Exception:
             return
 

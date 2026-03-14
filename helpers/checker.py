@@ -8,6 +8,7 @@ import ssl
 import struct
 import subprocess
 import tempfile
+import threading
 import time
 import urllib.parse
 from pathlib import Path
@@ -24,7 +25,12 @@ from .constants import (
 from .proxy_links import parse_link
 from .vless import generate_config, parse_vless
 from .vmess import generate_vmess_config, parse_vmess
-from .xray import extract_exit_ip, has_tunnel_established, read_text_if_exists
+from .xray import (
+    extract_exit_ip,
+    get_xray_binary,
+    has_tunnel_established,
+    read_text_if_exists,
+)
 
 
 def _build_dns_query(domain: str) -> tuple[int, bytes]:
@@ -136,6 +142,34 @@ def _socks5_reply_message(code: int) -> str:
         8: "address type not supported",
     }
     return mapping.get(code, f"SOCKS5 error code {code}")
+
+
+def _resolve_tcp_addresses_with_timeout(
+    server: str, port: int, timeout_seconds: float
+) -> tuple[list[tuple] | None, str]:
+    result: dict[str, object] = {}
+
+    def _resolver() -> None:
+        try:
+            result["infos"] = socket.getaddrinfo(server, port, type=socket.SOCK_STREAM)
+        except Exception as exc:
+            result["error"] = exc
+
+    resolver = threading.Thread(target=_resolver, daemon=True)
+    resolver.start()
+    resolver.join(max(timeout_seconds, 0.5))
+
+    if resolver.is_alive():
+        return None, "DNS resolution timed out."
+
+    error = result.get("error")
+    if error is not None:
+        return None, _humanize_reason(str(error))
+
+    infos = result.get("infos")
+    if not isinstance(infos, list) or not infos:
+        return None, "DNS resolution returned no addresses."
+    return infos, ""
 
 
 def _connect_via_socks5(
@@ -339,8 +373,9 @@ def _test_xray_proxy(
             f.flush()
             config_path = f.name
 
+        xray_bin = get_xray_binary() or "xray"
         proc = subprocess.Popen(
-            ["xray", "run", "-c", config_path],
+            [xray_bin, "run", "-c", config_path],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -413,7 +448,11 @@ def _test_xray_proxy(
         )
 
     except FileNotFoundError as exc:
-        reason = "xray not found in PATH" if (exc.filename or "") == "xray" else repr(exc)
+        missing = (exc.filename or "").lower()
+        if missing in {"xray", "xray.exe"}:
+            reason = "xray not found (PATH or bundled binary)"
+        else:
+            reason = repr(exc)
         xray_error = read_text_if_exists(error_log_path) if error_log_path else ""
         return (
             False,
@@ -617,15 +656,18 @@ def test_mtproto(
         )
 
     start = time.time()
-    try:
-        with socket.create_connection((server, int(port)), timeout=timeout_seconds):
-            latency = int((time.time() - start) * 1000)
-    except Exception as exc:
+    addr_infos, resolve_error = _resolve_tcp_addresses_with_timeout(
+        server,
+        int(port),
+        timeout_seconds,
+    )
+    if not addr_infos:
+        latency = int((time.time() - start) * 1000)
         return (
             False,
-            None,
+            latency if latency > 0 else None,
             {
-                "reason": _humanize_reason(str(exc)),
+                "reason": resolve_error or "DNS resolution failed for MTProto server.",
                 "xray_error": "",
                 "status_code": "",
                 "exit_ip": "",
@@ -633,16 +675,47 @@ def test_mtproto(
             },
         )
 
-    # MTProto needs Telegram-specific handshake; TCP-open check is useful but not definitive.
+    deadline = time.monotonic() + max(timeout_seconds, 0.5)
+    last_error: Exception | None = None
+
+    for family, socktype, proto, _canonname, sockaddr in addr_infos:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        try:
+            with socket.socket(family, socktype, proto) as sock:
+                sock.settimeout(remaining)
+                sock.connect(sockaddr)
+            latency = int((time.time() - start) * 1000)
+            return (
+                True,
+                latency,
+                {
+                    "reason": "TCP reachable. Likely working; verify manually in Telegram.",
+                    "xray_error": "",
+                    "status_code": "",
+                    "exit_ip": "",
+                    "partial": False,
+                },
+            )
+        except Exception as exc:
+            last_error = exc
+
+    latency = int((time.time() - start) * 1000)
+    reason = (
+        _humanize_reason(str(last_error))
+        if last_error is not None
+        else "Connection timed out while testing this link."
+    )
     return (
         False,
-        latency,
+        latency if latency > 0 else None,
         {
-            "reason": "TCP reachable; MTProto handshake not validated",
+            "reason": reason,
             "xray_error": "",
             "status_code": "",
             "exit_ip": "",
-            "partial": True,
+            "partial": False,
         },
     )
 

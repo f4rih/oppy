@@ -1,4 +1,5 @@
 import os
+import re
 import shlex
 import subprocess
 from pathlib import Path
@@ -15,6 +16,7 @@ from textual.widgets import (
     Input,
     Pretty,
     RichLog,
+    Select,
     Static,
     TabbedContent,
     TabPane,
@@ -88,29 +90,30 @@ class SettingsModal(ModalScreen[dict | None]):
     def compose(self) -> ComposeResult:
         with Vertical(id="settings_modal"):
             yield Static("Runtime Configuration", id="settings_title")
-            with Horizontal(id="settings_row_top"):
-                with Vertical(classes="settings_group"):
-                    yield Static("Concurrency", classes="settings_label")
-                    yield Input(str(self.current["concurrency"]), id="cfg_concurrency")
-                with Vertical(classes="settings_group"):
-                    yield Static("Xray Local Base Port", classes="settings_label")
-                    yield Input(str(self.current["base_port"]), id="cfg_base_port")
-                with Vertical(classes="settings_group"):
-                    yield Static("Request Timeout (sec)", classes="settings_label")
-                    yield Input(str(self.current["timeout"]), id="cfg_timeout")
-            with Vertical(id="settings_row_bottom"):
-                yield Static("Test URL", classes="settings_label")
-                yield Input(self.current["test_url"], id="cfg_test_url")
-            with Horizontal(id="settings_row_dns"):
-                with Vertical(classes="settings_group"):
-                    yield Static("DNS Retries", classes="settings_label")
-                    yield Input(str(self.current["dns_retries"]), id="cfg_dns_retries")
-                with Vertical(classes="settings_group"):
-                    yield Static("DNS Retry Interval (ms)", classes="settings_label")
-                    yield Input(
-                        str(self.current["dns_retry_interval_ms"]),
-                        id="cfg_dns_retry_interval_ms",
-                    )
+            with VerticalScroll(id="settings_body"):
+                with Horizontal(id="settings_row_top"):
+                    with Vertical(classes="settings_group"):
+                        yield Static("Concurrency", classes="settings_label")
+                        yield Input(str(self.current["concurrency"]), id="cfg_concurrency")
+                    with Vertical(classes="settings_group"):
+                        yield Static("Xray Local Base Port", classes="settings_label")
+                        yield Input(str(self.current["base_port"]), id="cfg_base_port")
+                    with Vertical(classes="settings_group"):
+                        yield Static("Request Timeout (sec)", classes="settings_label")
+                        yield Input(str(self.current["timeout"]), id="cfg_timeout")
+                with Vertical(id="settings_row_bottom"):
+                    yield Static("Test URL", classes="settings_label")
+                    yield Input(self.current["test_url"], id="cfg_test_url")
+                with Horizontal(id="settings_row_dns"):
+                    with Vertical(classes="settings_group"):
+                        yield Static("DNS Retries", classes="settings_label")
+                        yield Input(str(self.current["dns_retries"]), id="cfg_dns_retries")
+                    with Vertical(classes="settings_group"):
+                        yield Static("DNS Retry Interval (ms)", classes="settings_label")
+                        yield Input(
+                            str(self.current["dns_retry_interval_ms"]),
+                            id="cfg_dns_retry_interval_ms",
+                        )
             with Horizontal(id="settings_actions"):
                 yield Button(
                     "Save",
@@ -171,27 +174,56 @@ class ExportModal(ModalScreen[dict | None]):
         ("enter", "save", "Save"),
     ]
 
-    def __init__(self, start_directory: Path, default_filename: str) -> None:
+    def __init__(
+        self,
+        start_directory: Path,
+        default_filename: str,
+        available_types: list[str] | None = None,
+    ) -> None:
         super().__init__()
         self.selected_directory = start_directory
         self.default_filename = default_filename
+        self.available_types = sorted(
+            {
+                str(link_type).strip().lower()
+                for link_type in (available_types or [])
+                if str(link_type).strip()
+            }
+        )
+        self._type_checkbox_ids: dict[str, str] = {}
+        for index, link_type in enumerate(self.available_types):
+            slug = re.sub(r"[^a-z0-9]+", "_", link_type).strip("_") or "type"
+            self._type_checkbox_ids[link_type] = f"export_type_{slug}_{index}"
 
     def compose(self) -> ComposeResult:
         with Vertical(id="export_modal"):
             yield Static("Export Links", id="export_title")
-            yield Static("Choose output directory:", classes="export_label")
-            yield DirectoryTree(str(self.selected_directory), id="export_tree")
-            yield Static(
-                f"Selected Directory: {self.selected_directory}",
-                id="export_selected_dir",
-            )
-            yield Static("Output file name:", classes="export_label")
-            yield Input(self.default_filename, id="export_filename")
-            yield Checkbox(
-                "Include PARTIAL links (green/orange latency)",
-                id="export_include_partial",
-                value=False,
-            )
+            with VerticalScroll(id="export_body"):
+                yield Static("Choose output directory:", classes="export_label")
+                yield DirectoryTree(str(self.selected_directory), id="export_tree")
+                yield Static(
+                    f"Selected Directory: {self.selected_directory}",
+                    id="export_selected_dir",
+                )
+                yield Static("Output file name:", classes="export_label")
+                yield Input(self.default_filename, id="export_filename")
+                yield Checkbox(
+                    "Include PARTIAL links (green/orange latency)",
+                    id="export_include_partial",
+                    value=False,
+                )
+                yield Static("Types to export:", classes="export_label")
+                with Horizontal(id="export_type_checks"):
+                    if not self.available_types:
+                        yield Static("No loaded types.", classes="export_type_hint")
+                    else:
+                        for link_type in self.available_types:
+                            yield Checkbox(
+                                link_type.upper(),
+                                id=self._type_checkbox_ids[link_type],
+                                value=True,
+                                classes="export_type_checkbox",
+                            )
             yield Static("", id="export_error")
             with Horizontal(id="export_actions"):
                 yield Button(
@@ -250,11 +282,22 @@ class ExportModal(ModalScreen[dict | None]):
                 "Enter only a file name, not a full path."
             )
             return
+        selected_types = [
+            link_type
+            for link_type, checkbox_id in self._type_checkbox_ids.items()
+            if self.query_one(f"#{checkbox_id}", Checkbox).value
+        ]
+        if self.available_types and not selected_types:
+            self.query_one("#export_error", Static).update(
+                "Select at least one type to export."
+            )
+            return
         self.dismiss(
             {
                 "directory": str(self.selected_directory),
                 "filename": filename,
                 "include_partial": self.query_one("#export_include_partial", Checkbox).value,
+                "selected_types": selected_types,
             }
         )
 
@@ -301,6 +344,135 @@ class LogsModal(ModalScreen[None]):
 
     def action_close(self) -> None:
         self.dismiss()
+
+
+class FilterModal(ModalScreen[dict | None]):
+    BINDINGS = [
+        ("escape", "close", "Cancel"),
+        ("enter", "apply", "Filter"),
+    ]
+
+    def __init__(self, available_types: list[str], current: dict[str, str]) -> None:
+        super().__init__()
+        normalized_types = {
+            str(link_type).strip().lower()
+            for link_type in available_types
+            if str(link_type).strip()
+        }
+        self.available_types = sorted(normalized_types)
+        current_type = (current.get("type") or "").strip().lower()
+        if current_type and current_type not in normalized_types:
+            current_type = ""
+        self.current = {
+            "type": current_type,
+            "name": (current.get("name") or "").strip(),
+            "server": (current.get("server") or "").strip(),
+        }
+
+    def compose(self) -> ComposeResult:
+        type_options = [("All", "")]
+        type_options.extend((link_type.upper(), link_type) for link_type in self.available_types)
+
+        with Vertical(id="filter_modal"):
+            yield Static("Filter Links", id="filter_title")
+            with VerticalScroll(id="filter_body"):
+                with Horizontal(id="filter_row_top"):
+                    with Vertical(classes="filter_group"):
+                        yield Static("Type", classes="filter_label")
+                        yield Select(
+                            type_options,
+                            value=self.current["type"],
+                            allow_blank=False,
+                            id="filter_type",
+                        )
+                    with Vertical(classes="filter_group"):
+                        yield Static("Name Contains", classes="filter_label")
+                        yield Input(self.current["name"], id="filter_name")
+                with Horizontal(id="filter_row_bottom"):
+                    with Vertical(classes="filter_group"):
+                        yield Static("Server Contains", classes="filter_label")
+                        yield Input(self.current["server"], id="filter_server")
+                    with Vertical(classes="filter_group"):
+                        yield Static("Tip", classes="filter_label")
+                        yield Static("Leave fields empty to show all.", id="filter_tip")
+            with Horizontal(id="filter_actions"):
+                yield Button(
+                    "Filter",
+                    id="filter_apply",
+                    variant="primary",
+                    flat=True,
+                    compact=True,
+                )
+                yield Button(
+                    "Reset",
+                    id="filter_reset",
+                    variant="warning",
+                    flat=True,
+                    compact=True,
+                )
+                yield Button(
+                    "Drop Matches",
+                    id="filter_drop",
+                    variant="error",
+                    flat=True,
+                    compact=True,
+                )
+                yield Button(
+                    "Cancel",
+                    id="filter_cancel",
+                    variant="default",
+                    flat=True,
+                    compact=True,
+                )
+
+    def on_mount(self) -> None:
+        self.query_one("#filter_name", Input).focus()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "filter_apply":
+            self.action_apply()
+        elif event.button.id == "filter_reset":
+            self.dismiss({"reset": True})
+        elif event.button.id == "filter_drop":
+            self.action_drop()
+        elif event.button.id == "filter_cancel":
+            self.dismiss(None)
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        if event.input.id in {"filter_name", "filter_server"}:
+            self.action_apply()
+
+    def action_apply(self) -> None:
+        selected = self.query_one("#filter_type", Select).value
+        if selected in (Select.BLANK, Select.NULL, None):
+            selected_type = ""
+        else:
+            selected_type = str(selected)
+        self.dismiss(
+            {
+                "type": selected_type.strip().lower(),
+                "name": self.query_one("#filter_name", Input).value.strip(),
+                "server": self.query_one("#filter_server", Input).value.strip(),
+            }
+        )
+
+    def action_drop(self) -> None:
+        selected = self.query_one("#filter_type", Select).value
+        if selected in (Select.BLANK, Select.NULL, None):
+            selected_type = ""
+        else:
+            selected_type = str(selected)
+        self.dismiss(
+            {
+                "drop": True,
+                "type": selected_type.strip().lower(),
+                "name": self.query_one("#filter_name", Input).value.strip(),
+                "server": self.query_one("#filter_server", Input).value.strip(),
+            }
+        )
+
+    def action_close(self) -> None:
+        self.dismiss(None)
 
 
 class TerminalModal(ModalScreen[None]):
@@ -457,36 +629,37 @@ class ImportLinksModal(ModalScreen[dict | None]):
                 "Supported: vless://, vmess://, t.me/socks, t.me/proxy, tg://proxy, dns as udp://ip[:port] or ip:port",
                 id="import_hint",
             )
-            with TabbedContent(initial="import_tab_paste", id="import_tabs"):
-                with TabPane("Paste Links", id="import_tab_paste"):
-                    yield TextArea(
-                        "",
-                        id="import_editor",
-                        show_line_numbers=True,
-                        line_number_start=1,
-                        soft_wrap=False,
-                        language=None,
-                        theme="css",
-                    )
-                    with Horizontal(id="import_paste_actions"):
-                        yield Button(
-                            "Load Clipboard",
-                            id="import_load_clipboard",
-                            variant="primary",
-                            flat=True,
-                            compact=True,
+            with VerticalScroll(id="import_body"):
+                with TabbedContent(initial="import_tab_paste", id="import_tabs"):
+                    with TabPane("Paste Links", id="import_tab_paste"):
+                        yield TextArea(
+                            "",
+                            id="import_editor",
+                            show_line_numbers=True,
+                            line_number_start=1,
+                            soft_wrap=False,
+                            language=None,
+                            theme="css",
                         )
-                        yield Button(
-                            "Clear",
-                            id="import_clear_paste",
-                            variant="default",
-                            flat=True,
-                            compact=True,
-                        )
-                with TabPane("From File", id="import_tab_file"):
-                    yield Static("Select file:", id="import_file_hint")
-                    yield DirectoryTree(str(self.start_directory), id="import_tree")
-                    yield Static("Selected file: -", id="import_selected_file")
+                        with Horizontal(id="import_paste_actions"):
+                            yield Button(
+                                "Load Clipboard",
+                                id="import_load_clipboard",
+                                variant="primary",
+                                flat=True,
+                                compact=True,
+                            )
+                            yield Button(
+                                "Clear",
+                                id="import_clear_paste",
+                                variant="default",
+                                flat=True,
+                                compact=True,
+                            )
+                    with TabPane("From File", id="import_tab_file"):
+                        yield Static("Select file:", id="import_file_hint")
+                        yield DirectoryTree(str(self.start_directory), id="import_tree")
+                        yield Static("Selected file: -", id="import_selected_file")
             yield Static("", id="import_error")
             with Horizontal(id="import_actions"):
                 yield Button(
