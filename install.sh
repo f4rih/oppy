@@ -42,6 +42,74 @@ ensure_python_pip() {
   fi
 }
 
+run_pip_install() {
+  local args=("$@")
+  if "$PYTHON_BIN" -m pip "${args[@]}"; then
+    return 0
+  fi
+
+  # Debian/Ubuntu (PEP 668): allow user-scope installs when pip enforces externally-managed env.
+  if "$PYTHON_BIN" -m pip --help 2>/dev/null | grep -q -- '--break-system-packages'; then
+    say "Retrying pip with --break-system-packages (externally managed Python environment detected)."
+    "$PYTHON_BIN" -m pip --break-system-packages "${args[@]}"
+    return $?
+  fi
+
+  return 1
+}
+
+linux_xray_asset_name() {
+  case "$(uname -m)" in
+    x86_64|amd64) echo "Xray-linux-64.zip" ;;
+    aarch64|arm64) echo "Xray-linux-arm64-v8a.zip" ;;
+    armv7l|armv7) echo "Xray-linux-arm32-v7a.zip" ;;
+    i386|i686) echo "Xray-linux-32.zip" ;;
+    *) return 1 ;;
+  esac
+}
+
+install_xray_manual_linux() {
+  local asset
+  asset="$(linux_xray_asset_name)" || {
+    say "Manual xray fallback: unsupported architecture $(uname -m)."
+    return 1
+  }
+
+  ensure_cmd curl "curl is required to install xray."
+  ensure_cmd unzip "unzip is required to install xray."
+
+  local tmpdir
+  tmpdir="$(mktemp -d)"
+  local zip_path="${tmpdir}/xray.zip"
+  local download_url="https://github.com/XTLS/Xray-core/releases/latest/download/${asset}"
+  local install_dir="/usr/local/bin"
+
+  say "Manual xray fallback: downloading ${asset}"
+  if ! curl -fsSL "$download_url" -o "$zip_path"; then
+    rm -rf "$tmpdir"
+    return 1
+  fi
+  if ! unzip -q -o "$zip_path" xray -d "$tmpdir"; then
+    rm -rf "$tmpdir"
+    return 1
+  fi
+
+  if [[ -w "$install_dir" ]]; then
+    install -m 0755 "${tmpdir}/xray" "${install_dir}/xray"
+  elif have_cmd sudo; then
+    sudo install -m 0755 "${tmpdir}/xray" "${install_dir}/xray"
+  else
+    install_dir="${HOME}/.local/bin"
+    mkdir -p "$install_dir"
+    install -m 0755 "${tmpdir}/xray" "${install_dir}/xray"
+    export PATH="${install_dir}:$PATH"
+    say "Installed xray to ${install_dir}. Make sure it is in PATH."
+  fi
+
+  rm -rf "$tmpdir"
+  return 0
+}
+
 install_xray() {
   local platform="$1"
   if have_cmd xray; then
@@ -75,10 +143,20 @@ install_xray() {
     fi
 
     ensure_cmd curl "curl is required to install xray."
+    local official_ok=0
     if have_cmd sudo; then
-      sudo bash -c "$(curl -fsSL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
+      if sudo bash -c "$(curl -fsSL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install; then
+        official_ok=1
+      fi
     else
-      bash -c "$(curl -fsSL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
+      if bash -c "$(curl -fsSL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install; then
+        official_ok=1
+      fi
+    fi
+
+    if [[ "$official_ok" -eq 0 ]] || ! have_cmd xray; then
+      say "Official xray installer failed or xray not found. Trying manual binary fallback..."
+      install_xray_manual_linux || fail "Manual xray fallback failed. Install xray manually, ensure it is in PATH, then rerun."
     fi
   fi
 
@@ -108,8 +186,8 @@ install_oppy_python() {
   fi
 
   say "Installing OPPY with pip (user scope)..."
-  "$PYTHON_BIN" -m pip install --user --upgrade pip setuptools wheel
-  "$PYTHON_BIN" -m pip install --user --upgrade "$source_target"
+  run_pip_install install --user --upgrade pip setuptools wheel || say "Skipping pip toolchain upgrade."
+  run_pip_install install --user --upgrade "$source_target" || fail "Failed to install OPPY with pip."
 
   if [[ -n "$tmpdir" ]]; then
     rm -rf "$tmpdir"
