@@ -24,14 +24,15 @@ brew install xray
 xray version
 ```
 
-#### Linux (official installer script)
+#### Ubuntu / Debian
 
 ```bash
-bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
+sudo apt update
+sudo apt install -y xray-core
 xray version
 ```
 
-If you prefer manual install, download the archive from Xray-core releases, extract binary, and put `xray` in your `PATH`.
+If `xray-core` is unavailable in your repositories, use the official installer script from Xray project and ensure `xray` is in `PATH`.
 
 #### Windows
 
@@ -93,9 +94,9 @@ Press Enter (or Save) to apply.
 - `p` -> Pause/Resume
 - `a` -> Toggle auto-follow row
 
-Useful reset shortcuts:
+Useful shortcuts:
 
-- `f` -> Fresh start (keep links, clear results)
+- `f` -> Filter links (type/name/server), with Reset and Drop Matches
 - `r` -> Reset scan (clear table + loaded links)
 
 ## 6) Inspect details
@@ -132,7 +133,7 @@ Partial export currently includes only partial links in green/orange latency zon
 ## 10) Daily usage pattern
 
 1. Import new links (`i`)
-2. Optional reset (`f` or `r`)
+2. Optional filter (`f`) to focus the list or drop unwanted records
 3. Run checks (`s`)
 4. Review partial/fail reasons
 5. Export healthy (`e`)

@@ -19,6 +19,16 @@ dist/
 *.egg-info/
 .eggs/
 pip-wheel-metadata/
+*.spec.bak
+*.spec
+*.toc
+*.pkg
+*.manifest
+*.pyz
+*.app
+*.exe
+*.msi
+*.dmg
 
 # IDE / editor
 .idea/

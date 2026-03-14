@@ -1,6 +1,8 @@
 # OPPY - Mission Control for Proxy Links
 
-![OPPY Logo](assets/oppy_logo_alt.svg)
+<p align="center">
+  <img src="assets/oppy_logo_alt.svg" alt="OPPY Logo">
+</p>
 
 OPPY helps you validate proxy links quickly with live status, latency, export tools, and per-row diagnostics.
 
@@ -17,11 +19,39 @@ Supported link types:
 - Python 3.10+
 - `xray` installed and available in `PATH` (required for VLESS / VMESS checks)
 
-No external `curl` dependency is required anymore (HTTP probing is built-in Python).
+---
+
+## Install Xray
+
+### macOS (Homebrew)
+
+```bash
+brew install xray
+```
+
+### Ubuntu / Debian (APT)
+
+```bash
+sudo apt update
+sudo apt install -y xray-core
+```
+
+If `xray-core` is unavailable in your configured repositories, use the official install method from the Xray project and ensure `xray` is in `PATH`.
+
+### Windows
+
+1. Download Xray release zip from the official project.
+2. Extract `xray.exe`.
+3. Add its folder to `PATH` in System Environment Variables.
+4. Open a new terminal and verify:
+
+```powershell
+xray version
+```
 
 ---
 
-## Install
+## Install OPPY
 
 ### One-liner (Linux / macOS)
 
@@ -115,22 +145,21 @@ CLI mode:
 oppy --input-file output.txt --no-tui
 ```
 
----
+## Terminal Rendering Note (macOS)
 
+On macOS, the built-in Terminal app may render some borders/buttons with visual artifacts.
+For a cleaner UI, prefer a modern third-party terminal such as Ghostty, iTerm2, or WezTerm.
+
+---
 ## Highlights
 
-- Live table with status, latency, exit IP, reason.
-- Status meters + latency trend visualization.
-- Config modal for concurrency, timeout, DNS retry settings, test URL, base port.
-- Import links by paste or file browser.
-- Export healthy links with optional filtered partial export.
-- Details modal per row + URL copy.
-
----
-
-## Assets
-
-![OPPY Icon](assets/oppy_icon.svg)
+- Multi-type checks in one table: VLESS, VMESS, Telegram SOCKS, MTProto, DNS.
+- Live status meters + latency trend with running updates.
+- Filter modal (`f`) for type/name/server and drop-matching records.
+- Import modal (`i`) with paste/file tabs and clipboard load.
+- Config modal (`c`) for concurrency, timeout, DNS retry settings, test URL, base port.
+- Export modal (`e`) with type selection and optional partial export (green/orange only).
+- Row details modal (`Enter`) with full payload and copy URL.
 
 ---
 

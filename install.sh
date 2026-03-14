@@ -54,6 +54,27 @@ install_xray() {
     ensure_cmd brew "Homebrew is required on macOS. Install from https://brew.sh"
     brew install xray
   else
+    # Prefer distro package on Debian/Ubuntu when available.
+    if have_cmd apt-get; then
+      say "Trying apt package: xray-core"
+      if have_cmd sudo; then
+        if sudo apt-get update && sudo apt-get install -y xray-core; then
+          if have_cmd xray; then
+            say "xray installed via apt: $(xray version 2>/dev/null | head -n 1 || echo 'unknown version')"
+            return
+          fi
+        fi
+      else
+        if apt-get update && apt-get install -y xray-core; then
+          if have_cmd xray; then
+            say "xray installed via apt: $(xray version 2>/dev/null | head -n 1 || echo 'unknown version')"
+            return
+          fi
+        fi
+      fi
+      say "apt install did not provide xray command; falling back to official installer."
+    fi
+
     ensure_cmd curl "curl is required to install xray."
     if have_cmd sudo; then
       sudo bash -c "$(curl -fsSL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
@@ -67,8 +88,6 @@ install_xray() {
 }
 
 install_oppy_python() {
-  ensure_cmd curl "curl is required."
-  ensure_cmd unzip "unzip is required."
   ensure_python_pip
 
   local source_target
@@ -76,6 +95,8 @@ install_oppy_python() {
     say "Using local repository: $(pwd)"
     source_target=".[clipboard]"
   else
+    ensure_cmd curl "curl is required."
+    ensure_cmd unzip "unzip is required."
     local tmpdir
     tmpdir="$(mktemp -d)"
     trap 'rm -rf "$tmpdir"' EXIT
