@@ -49,11 +49,10 @@ install_xray() {
     return
   fi
 
-  say "Installing xray..."
   if [[ "$platform" == "macos" ]]; then
-    ensure_cmd brew "Homebrew is required on macOS. Install from https://brew.sh"
-    brew install xray
+    fail "xray is not installed. Please install xray manually on macOS, ensure it's in PATH, then rerun this script."
   else
+    say "Installing xray..."
     # Prefer distro package on Debian/Ubuntu when available.
     if have_cmd apt-get; then
       say "Trying apt package: xray-core"

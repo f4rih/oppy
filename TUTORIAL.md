@@ -19,8 +19,9 @@ This one-liner installs both Xray and OPPY.
 
 #### macOS
 
+Download the latest Xray release, extract `xray`, add it to your `PATH`, then verify:
+
 ```bash
-brew install xray
 xray version
 ```
 

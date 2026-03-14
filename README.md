@@ -23,10 +23,13 @@ Supported link types:
 
 ## Install Xray
 
-### macOS (Homebrew)
+### macOS
+
+Download the latest Xray release, extract `xray`, and put it in your `PATH`.
+Then verify:
 
 ```bash
-brew install xray
+xray version
 ```
 
 ### Ubuntu / Debian (APT)
@@ -61,10 +64,21 @@ curl -fsSL https://raw.githubusercontent.com/f4rih/oppy/main/install.sh | bash
 
 What this script does:
 
-- installs `xray` (via Homebrew on macOS or official installer on Linux)
+- installs `xray` on Linux when missing (apt first, then official installer fallback)
 - installs OPPY with pip in user scope
 - installs optional clipboard support (`pyperclip`)
 - prints PATH hint if `oppy` command is not yet visible
+
+### Manual setup (clone + requirements)
+
+```bash
+git clone https://github.com/f4rih/oppy.git
+cd oppy
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python oppy.py --input-file output.txt
+```
 
 ### pip
 
@@ -105,23 +119,6 @@ Tool-style install:
 ```bash
 uv tool install .
 ```
-
-### Homebrew
-
-This repo includes a formula template at `Formula/oppy.rb`.
-
-Recommended flow:
-
-1. Publish a GitHub release archive (tag + tarball).
-2. Update `Formula/oppy.rb` with real `url`, `sha256`, and `homepage`.
-3. Add formula to your tap and install:
-
-```bash
-brew tap <you>/<tap>
-brew install oppy
-```
-
-For full guide, see comments inside `Formula/oppy.rb`.
 
 ---
 
