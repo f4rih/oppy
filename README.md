@@ -4,7 +4,9 @@
   <img src="assets/oppy_logo_alt.svg" alt="OPPY Logo">
 </p>
 
-OPPY helps you validate proxy links quickly with live status, latency, export tools, and per-row diagnostics.
+OPPY is a cross-platform, high-performance TUI for validating proxy links at scale, with concurrent checks, live status and latency telemetry, rich per-row diagnostics, filtering, and flexible export workflows.
+
+![OPPY Screenshot](assets/oppy_screenshot.png)
 
 Supported link types:
 
