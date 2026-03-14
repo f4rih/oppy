@@ -27,7 +27,12 @@ Supported link types:
 
 ### macOS
 
-Download the latest Xray release, extract `xray`, and put it in your `PATH`.
+Install with Homebrew:
+
+```bash
+brew install xray
+```
+
 Then verify:
 
 ```bash
@@ -57,6 +62,12 @@ xray version
 ---
 
 ## Install OPPY
+
+### Prebuilt executables
+
+Download the latest macOS, Linux, and Windows executables from the GitHub Releases page:
+
+[OPPY Releases](https://github.com/f4rih/oppy/releases)
 
 ### One-liner (Linux / macOS)
 
