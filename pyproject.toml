@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-  { name = "Fardin" }
+  { name = "f4rih" }
 ]
 keywords = ["proxy", "vless", "vmess", "mtproto", "socks", "dns", "textual", "xray"]
 classifiers = [
