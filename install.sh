@@ -89,6 +89,7 @@ install_xray() {
 install_oppy_python() {
   ensure_python_pip
 
+  local tmpdir=""
   local source_target
   if [[ -f "./pyproject.toml" && -f "./oppy.py" ]]; then
     say "Using local repository: $(pwd)"
@@ -96,9 +97,7 @@ install_oppy_python() {
   else
     ensure_cmd curl "curl is required."
     ensure_cmd unzip "unzip is required."
-    local tmpdir
     tmpdir="$(mktemp -d)"
-    trap 'rm -rf "$tmpdir"' EXIT
     say "Downloading source from ${REMOTE_ZIP_URL}"
     curl -fsSL "$REMOTE_ZIP_URL" -o "${tmpdir}/oppy.zip"
     unzip -q "${tmpdir}/oppy.zip" -d "$tmpdir"
@@ -111,6 +110,10 @@ install_oppy_python() {
   say "Installing OPPY with pip (user scope)..."
   "$PYTHON_BIN" -m pip install --user --upgrade pip setuptools wheel
   "$PYTHON_BIN" -m pip install --user --upgrade "$source_target"
+
+  if [[ -n "$tmpdir" ]]; then
+    rm -rf "$tmpdir"
+  fi
 }
 
 print_path_hint() {
